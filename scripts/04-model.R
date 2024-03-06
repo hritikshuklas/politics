@@ -11,27 +11,33 @@
 #### Workspace setup ####
 library(tidyverse)
 library(rstanarm)
+library(arrow)
 
 #### Read data ####
-analysis_data <- read_csv("data/analysis_data/analysis_data.csv")
+analysis_data <- read_parquet("data/analysis_data/analysis_data.parquet")
 
+set.seed(853)
+
+ces2020_reduced <- 
+  ces2020 |> 
+  slice_sample(n = 1000)
 ### Model data ####
-first_model <-
+political_preferences <-
   stan_glm(
-    formula = flying_time ~ length + width,
-    data = analysis_data,
-    family = gaussian(),
+    voted_for ~ gender + education,
+    data = ces2020_reduced,
+    family = binomial(link = "logit"),
     prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
     prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_aux = exponential(rate = 1, autoscale = TRUE),
     seed = 853
   )
 
+prior_summary(first_model)
 
 #### Save model ####
 saveRDS(
-  first_model,
-  file = "models/first_model.rds"
+  political_preferences,
+  file = "models/political_preferences.rds"
 )
 
 
